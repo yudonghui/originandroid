@@ -1355,7 +1355,8 @@ public final class ActivityStackSupervisor implements DisplayListener {
                 app.pendingUiClean = true;
             }
             app.forceProcessStateUpTo(mService.mTopProcessState);
-            //去调用了ActivityThread的scheduleLaunchActivity方法
+            //关注点
+            // 去调用了ActivityThread的scheduleLaunchActivity方法
             app.thread.scheduleLaunchActivity(new Intent(r.intent), r.appToken,
                     System.identityHashCode(r), r.info, new Configuration(mService.mConfiguration),
                     new Configuration(stack.mOverrideConfig), r.compat, r.launchedFromPackage,

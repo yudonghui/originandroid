@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.mylike.testdarkmode;
+package com.mylike.originandroid;
 
 import android.app.Activity;
 import android.app.ActivityManager;

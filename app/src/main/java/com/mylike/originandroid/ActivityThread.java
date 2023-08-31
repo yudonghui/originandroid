@@ -65,7 +65,6 @@ import android.os.DropBoxManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
 import android.os.Parcel;
@@ -137,6 +136,9 @@ import libcore.io.EventLogger;
 import libcore.io.IoUtils;
 import libcore.net.event.NetworkEventDispatcher;
 
+import com.mylike.originandroid.ActivityManagerNative;
+import com.mylike.originandroid.ContextImpl;
+
 final class RemoteServiceException extends AndroidRuntimeException {
     public RemoteServiceException(String msg) {
         super(msg);
@@ -188,7 +190,7 @@ public final class ActivityThread {
      */
     public static final int SERVICE_DONE_EXECUTING_STOP = 2;
 
-    private com.mylike.testdarkmode.ContextImpl mSystemContext;
+    private ContextImpl mSystemContext;
 
     static IPackageManager sPackageManager;
 
@@ -565,7 +567,7 @@ public final class ActivityThread {
     }
 
     static final class ContextCleanupInfo {
-        com.mylike.testdarkmode.ContextImpl context;
+        ContextImpl context;
         String what;
         String who;
     }
@@ -1005,7 +1007,7 @@ public final class ActivityThread {
             long dalvikAllocated = dalvikMax - dalvikFree;
             long viewInstanceCount = ViewDebug.getViewInstanceCount();
             long viewRootInstanceCount = ViewDebug.getViewRootImplCount();
-            long appContextInstanceCount = Debug.countInstancesOfClass(com.mylike.testdarkmode.ContextImpl.class);
+            long appContextInstanceCount = Debug.countInstancesOfClass(ContextImpl.class);
             long activityInstanceCount = Debug.countInstancesOfClass(Activity.class);
             int globalAssetCount = AssetManager.getGlobalAssetCount();
             int globalAssetManagerCount = AssetManager.getGlobalAssetManagerCount();
@@ -1458,7 +1460,7 @@ public final class ActivityThread {
                             msg.arg2, false);
                     Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
                     break;
-                case BIND_APPLICATION:
+                case BIND_APPLICATION://接收到创建Application的消息
                     Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "bindApplication");
                     AppBindData data = (AppBindData) msg.obj;
                     handleBindApplication(data);
@@ -1658,7 +1660,7 @@ public final class ActivityThread {
             }
             if (a != null) {
                 mNewActivities = null;
-                IActivityManager am = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+                IActivityManager am = ActivityManagerNative.getDefault();
                 ActivityClientRecord prev;
                 do {
                     if (localLOGV) Slog.v(
@@ -1919,10 +1921,10 @@ public final class ActivityThread {
         return mBoundApplication.processName;
     }
 
-    public com.mylike.testdarkmode.ContextImpl getSystemContext() {
+    public ContextImpl getSystemContext() {
         synchronized (this) {
             if (mSystemContext == null) {
-                mSystemContext = com.mylike.testdarkmode.ContextImpl.createSystemContext(this);
+                mSystemContext = ContextImpl.createSystemContext(this);
             }
             return mSystemContext;
         }
@@ -2332,7 +2334,7 @@ public final class ActivityThread {
         mH.sendMessage(msg);
     }
 
-    final void scheduleContextCleanup(com.mylike.testdarkmode.ContextImpl context, String who,
+    final void scheduleContextCleanup(ContextImpl context, String who,
                                       String what) {
         ContextCleanupInfo cci = new ContextCleanupInfo();
         cci.context = context;
@@ -2480,13 +2482,13 @@ public final class ActivityThread {
 
     private Context createBaseContextForActivity(ActivityClientRecord r,
                                                  final Activity activity) {
-        com.mylike.testdarkmode.ContextImpl appContext = com.mylike.testdarkmode.ContextImpl.createActivityContext(this, r.packageInfo, r.token);
+        ContextImpl appContext = ContextImpl.createActivityContext(this, r.packageInfo, r.token);
         appContext.setOuterContext(activity);
         Context baseContext = appContext;
 
         final DisplayManagerGlobal dm = DisplayManagerGlobal.getInstance();
         try {
-            final int displayId = com.mylike.testdarkmode.ActivityManagerNative.getDefault().getActivityDisplayId(r.token);
+            final int displayId = ActivityManagerNative.getDefault().getActivityDisplayId(r.token);
             if (displayId > Display.DEFAULT_DISPLAY) {
                 Display display = dm.getRealDisplay(displayId, r.token);
                 baseContext = appContext.createDisplayContext(display);
@@ -2588,7 +2590,7 @@ public final class ActivityThread {
             // If there was an error, for any reason, tell the activity
             // manager to stop us.
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault()
+                ActivityManagerNative.getDefault()
                         .finishActivity(r.token, Activity.RESULT_CANCELED, null, false);
             } catch (RemoteException ex) {
                 // Ignore
@@ -2637,7 +2639,7 @@ public final class ActivityThread {
         if (data.isEmpty()) {
             data = null;
         }
-        IActivityManager mgr = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+        IActivityManager mgr = ActivityManagerNative.getDefault();
         try {
             mgr.reportAssistContextExtras(cmd.requestToken, data);
         } catch (RemoteException e) {
@@ -2675,7 +2677,7 @@ public final class ActivityThread {
             }
         }
         try {
-            com.mylike.testdarkmode.ActivityManagerNative.getDefault().backgroundResourcesReleased(token);
+            ActivityManagerNative.getDefault().backgroundResourcesReleased(token);
         } catch (RemoteException e) {
         }
     }
@@ -2725,7 +2727,7 @@ public final class ActivityThread {
         LoadedApk packageInfo = getPackageInfoNoCheck(
                 data.info.applicationInfo, data.compatInfo);
 
-        IActivityManager mgr = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+        IActivityManager mgr = ActivityManagerNative.getDefault();
 
         BroadcastReceiver receiver;
         try {
@@ -2754,7 +2756,7 @@ public final class ActivityThread {
                             + ", comp=" + data.intent.getComponent().toShortString()
                             + ", dir=" + packageInfo.getAppDir());
 
-            com.mylike.testdarkmode.ContextImpl context = (com.mylike.testdarkmode.ContextImpl) app.getBaseContext();
+            ContextImpl context = (ContextImpl) app.getBaseContext();
             sCurrentBroadcastIntent.set(data.intent);
             receiver.setPendingResult(data);
             receiver.onReceive(context.getReceiverRestrictedContext(),
@@ -2830,7 +2832,7 @@ public final class ActivityThread {
                     agent = (BackupAgent) cl.loadClass(classname).newInstance();
 
                     // set up the agent's context
-                    com.mylike.testdarkmode.ContextImpl context = com.mylike.testdarkmode.ContextImpl.createAppContext(this, packageInfo);
+                    ContextImpl context = ContextImpl.createAppContext(this, packageInfo);
                     context.setOuterContext(agent);
                     agent.attach(context);
 
@@ -2851,7 +2853,7 @@ public final class ActivityThread {
 
             // tell the OS that we're live now
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault().backupAgentCreated(packageName, binder);
+                ActivityManagerNative.getDefault().backupAgentCreated(packageName, binder);
             } catch (RemoteException e) {
                 // nothing to do.
             }
@@ -2903,16 +2905,16 @@ public final class ActivityThread {
         try {
             if (localLOGV) Slog.v(TAG, "Creating service " + data.info.name);
 
-            com.mylike.testdarkmode.ContextImpl context = com.mylike.testdarkmode.ContextImpl.createAppContext(this, packageInfo);
+            ContextImpl context = ContextImpl.createAppContext(this, packageInfo);
             context.setOuterContext(service);
 
             Application app = packageInfo.makeApplication(false, mInstrumentation);
             service.attach(context, this, data.info.name, data.token, app,
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault());
+                    ActivityManagerNative.getDefault());
             service.onCreate();
             mServices.put(data.token, service);
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault().serviceDoneExecuting(
+                ActivityManagerNative.getDefault().serviceDoneExecuting(
                         data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
             } catch (RemoteException e) {
                 // nothing to do.
@@ -2937,11 +2939,11 @@ public final class ActivityThread {
                 try {
                     if (!data.rebind) {
                         IBinder binder = s.onBind(data.intent);
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().publishService(
+                        ActivityManagerNative.getDefault().publishService(
                                 data.token, data.intent, binder);
                     } else {
                         s.onRebind(data.intent);
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().serviceDoneExecuting(
+                        ActivityManagerNative.getDefault().serviceDoneExecuting(
                                 data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
                     }
                     ensureJitEnabled();
@@ -2966,10 +2968,10 @@ public final class ActivityThread {
                 boolean doRebind = s.onUnbind(data.intent);
                 try {
                     if (doRebind) {
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().unbindFinished(
+                        ActivityManagerNative.getDefault().unbindFinished(
                                 data.token, data.intent, doRebind);
                     } else {
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().serviceDoneExecuting(
+                        ActivityManagerNative.getDefault().serviceDoneExecuting(
                                 data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
                     }
                 } catch (RemoteException ex) {
@@ -3051,7 +3053,7 @@ public final class ActivityThread {
                 QueuedWork.waitToFinish();
 
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().serviceDoneExecuting(
+                    ActivityManagerNative.getDefault().serviceDoneExecuting(
                             data.token, SERVICE_DONE_EXECUTING_START, data.startId, res);
                 } catch (RemoteException e) {
                     // nothing to do.
@@ -3074,15 +3076,15 @@ public final class ActivityThread {
                 if (localLOGV) Slog.v(TAG, "Destroying service " + s);
                 s.onDestroy();
                 Context context = s.getBaseContext();
-                if (context instanceof com.mylike.testdarkmode.ContextImpl) {
+                if (context instanceof ContextImpl) {
                     final String who = s.getClassName();
-                    ((com.mylike.testdarkmode.ContextImpl) context).scheduleFinalCleanup(who, "Service");
+                    ((ContextImpl) context).scheduleFinalCleanup(who, "Service");
                 }
 
                 QueuedWork.waitToFinish();
 
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().serviceDoneExecuting(
+                    ActivityManagerNative.getDefault().serviceDoneExecuting(
                             token, SERVICE_DONE_EXECUTING_STOP, 0, 0);
                 } catch (RemoteException e) {
                     // nothing to do.
@@ -3184,7 +3186,7 @@ public final class ActivityThread {
             boolean willBeVisible = !a.mStartedActivity;
             if (!willBeVisible) {
                 try {
-                    willBeVisible = com.mylike.testdarkmode.ActivityManagerNative.getDefault().willActivityBeVisible(
+                    willBeVisible = ActivityManagerNative.getDefault().willActivityBeVisible(
                             a.getActivityToken());
                 } catch (RemoteException e) {
                 }
@@ -3260,7 +3262,7 @@ public final class ActivityThread {
             // Tell the activity manager we have resumed.
             if (reallyResume) {
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().activityResumed(token);
+                    ActivityManagerNative.getDefault().activityResumed(token);
                 } catch (RemoteException ex) {
                 }
             }
@@ -3269,7 +3271,7 @@ public final class ActivityThread {
             // If an exception was thrown when trying to resume, then
             // just end this activity.
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault()
+                ActivityManagerNative.getDefault()
                         .finishActivity(token, Activity.RESULT_CANCELED, null, false);
             } catch (RemoteException ex) {
             }
@@ -3352,7 +3354,7 @@ public final class ActivityThread {
             // Tell the activity manager we have paused.
             if (!dontReport) {
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().activityPaused(token);
+                    ActivityManagerNative.getDefault().activityPaused(token);
                 } catch (RemoteException ex) {
                 }
             }
@@ -3445,7 +3447,7 @@ public final class ActivityThread {
             // Tell activity manager we have been stopped.
             try {
                 if (DEBUG_MEMORY_TRIM) Slog.v(TAG, "Reporting activity stopped: " + activity);
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault().activityStopped(
+                ActivityManagerNative.getDefault().activityStopped(
                         activity.token, state, persistentState, description);
             } catch (RemoteException ex) {
             }
@@ -3664,7 +3666,7 @@ public final class ActivityThread {
 
             // Tell activity manager we slept.
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault().activitySlept(r.token);
+                ActivityManagerNative.getDefault().activitySlept(r.token);
             } catch (RemoteException ex) {
             }
         } else {
@@ -3916,14 +3918,14 @@ public final class ActivityThread {
             // ApplicationContext we need to have it tear down things
             // cleanly.
             Context c = r.activity.getBaseContext();
-            if (c instanceof com.mylike.testdarkmode.ContextImpl) {
-                ((com.mylike.testdarkmode.ContextImpl) c).scheduleFinalCleanup(
+            if (c instanceof ContextImpl) {
+                ((ContextImpl) c).scheduleFinalCleanup(
                         r.activity.getClass().getName(), "Activity");
             }
         }
         if (finishing) {
             try {
-                com.mylike.testdarkmode.ActivityManagerNative.getDefault().activityDestroyed(token);
+                ActivityManagerNative.getDefault().activityDestroyed(token);
             } catch (RemoteException ex) {
                 // If the system process has died, it's game over for everyone.
             }
@@ -4438,6 +4440,9 @@ public final class ActivityThread {
         }
     }
 
+    /**
+     *创建Application
+     */
     private void handleBindApplication(AppBindData data) {
         mBoundApplication = data;
         mConfiguration = new Configuration(data.config);
@@ -4513,7 +4518,7 @@ public final class ActivityThread {
         }
         updateDefaultDensity();
 
-        final com.mylike.testdarkmode.ContextImpl appContext = com.mylike.testdarkmode.ContextImpl.createAppContext(this, data.info);
+        final ContextImpl appContext = ContextImpl.createAppContext(this, data.info);
         if (!Process.isIsolated()) {
             final File cacheDir = appContext.getCacheDir();
 
@@ -4562,7 +4567,7 @@ public final class ActivityThread {
                 Slog.w(TAG, "Application " + data.info.getPackageName()
                         + " is waiting for the debugger on port 8100...");
 
-                IActivityManager mgr = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+                IActivityManager mgr = ActivityManagerNative.getDefault();
                 try {
                     mgr.showWaitingForDebugger(mAppThread, true);
                 } catch (RemoteException ex) {
@@ -4637,7 +4642,7 @@ public final class ActivityThread {
             instrApp.nativeLibraryDir = ii.nativeLibraryDir;
             LoadedApk pi = getPackageInfo(instrApp, data.compatInfo,
                     appContext.getClassLoader(), false, true, false);
-            com.mylike.testdarkmode.ContextImpl instrContext = com.mylike.testdarkmode.ContextImpl.createAppContext(this, pi);
+            ContextImpl instrContext = ContextImpl.createAppContext(this, pi);
 
             try {
                 ClassLoader cl = instrContext.getClassLoader();
@@ -4717,7 +4722,7 @@ public final class ActivityThread {
 
     /*package*/
     final void finishInstrumentation(int resultCode, Bundle results) {
-        IActivityManager am = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+        IActivityManager am = ActivityManagerNative.getDefault();
         if (mProfiler.profileFile != null && mProfiler.handlingProfiling
                 && mProfiler.profileFd == null) {
             Debug.stopMethodTracing();
@@ -4753,7 +4758,7 @@ public final class ActivityThread {
         }
 
         try {
-            com.mylike.testdarkmode.ActivityManagerNative.getDefault().publishContentProviders(
+            ActivityManagerNative.getDefault().publishContentProviders(
                     getApplicationThread(), results);
         } catch (RemoteException ex) {
         }
@@ -4774,7 +4779,7 @@ public final class ActivityThread {
         // be re-entrant in the case where the provider is in the same process.
         IActivityManager.ContentProviderHolder holder = null;
         try {
-            holder = com.mylike.testdarkmode.ActivityManagerNative.getDefault().getContentProvider(
+            holder = ActivityManagerNative.getDefault().getContentProvider(
                     getApplicationThread(), auth, userId, stable);
         } catch (RemoteException ex) {
         }
@@ -4819,7 +4824,7 @@ public final class ActivityThread {
                                 + prc.holder.info.name + ": unstableDelta="
                                 + unstableDelta);
                     }
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().refContentProvider(
+                    ActivityManagerNative.getDefault().refContentProvider(
                             prc.holder.connection, 1, unstableDelta);
                 } catch (RemoteException e) {
                     //do nothing content provider object is dead any way
@@ -4848,7 +4853,7 @@ public final class ActivityThread {
                             Slog.v(TAG, "incProviderRef: Now unstable - "
                                     + prc.holder.info.name);
                         }
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().refContentProvider(
+                        ActivityManagerNative.getDefault().refContentProvider(
                                 prc.holder.connection, 0, 1);
                     } catch (RemoteException e) {
                         //do nothing content provider object is dead any way
@@ -4922,7 +4927,7 @@ public final class ActivityThread {
                             Slog.v(TAG, "releaseProvider: No longer stable w/lastRef="
                                     + lastRef + " - " + prc.holder.info.name);
                         }
-                        com.mylike.testdarkmode.ActivityManagerNative.getDefault().refContentProvider(
+                        ActivityManagerNative.getDefault().refContentProvider(
                                 prc.holder.connection, -1, lastRef ? 1 : 0);
                     } catch (RemoteException e) {
                         //do nothing content provider object is dead any way
@@ -4946,7 +4951,7 @@ public final class ActivityThread {
                                 Slog.v(TAG, "releaseProvider: No longer unstable - "
                                         + prc.holder.info.name);
                             }
-                            com.mylike.testdarkmode.ActivityManagerNative.getDefault().refContentProvider(
+                            ActivityManagerNative.getDefault().refContentProvider(
                                     prc.holder.connection, 0, -1);
                         } catch (RemoteException e) {
                             //do nothing content provider object is dead any way
@@ -5013,7 +5018,7 @@ public final class ActivityThread {
                 Slog.v(TAG, "removeProvider: Invoking ActivityManagerNative."
                         + "removeContentProvider(" + prc.holder.info.name + ")");
             }
-            com.mylike.testdarkmode.ActivityManagerNative.getDefault().removeContentProvider(
+            ActivityManagerNative.getDefault().removeContentProvider(
                     prc.holder.connection, false);
         } catch (RemoteException e) {
             //do nothing content provider object is dead any way
@@ -5047,7 +5052,7 @@ public final class ActivityThread {
                 // it knows it is dead (so we don't race with its death
                 // notification).
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault().unstableProviderDied(
+                    ActivityManagerNative.getDefault().unstableProviderDied(
                             prc.holder.connection);
                 } catch (RemoteException e) {
                     //do nothing content provider object is dead any way
@@ -5061,7 +5066,7 @@ public final class ActivityThread {
             ProviderRefCount prc = mProviderRefCountMap.get(provider);
             if (prc != null) {
                 try {
-                    com.mylike.testdarkmode.ActivityManagerNative.getDefault()
+                    ActivityManagerNative.getDefault()
                             .appNotRespondingViaProvider(prc.holder.connection);
                 } catch (RemoteException e) {
                 }
@@ -5201,7 +5206,7 @@ public final class ActivityThread {
                     if (!noReleaseNeeded) {
                         incProviderRefLocked(prc, stable);
                         try {
-                            com.mylike.testdarkmode.ActivityManagerNative.getDefault().removeContentProvider(
+                            ActivityManagerNative.getDefault().removeContentProvider(
                                     holder.connection, stable);
                         } catch (RemoteException e) {
                             //do nothing content provider object is dead any way
@@ -5242,7 +5247,7 @@ public final class ActivityThread {
             android.ddm.DdmHandleAppName.setAppName("<pre-initialized>",
                     UserHandle.myUserId());
             RuntimeInit.setApplicationObject(mAppThread.asBinder());
-            final IActivityManager mgr = com.mylike.testdarkmode.ActivityManagerNative.getDefault();
+            final IActivityManager mgr = ActivityManagerNative.getDefault();
             try {
                 mgr.attachApplication(mAppThread);
             } catch (RemoteException ex) {
@@ -5277,7 +5282,7 @@ public final class ActivityThread {
                     UserHandle.myUserId());
             try {
                 mInstrumentation = new Instrumentation();
-                com.mylike.testdarkmode.ContextImpl context = com.mylike.testdarkmode.ContextImpl.createAppContext(
+                ContextImpl context = ContextImpl.createAppContext(
                         this, getSystemContext().mPackageInfo);
                 mInitialApplication = context.mPackageInfo.makeApplication(true, null);
                 mInitialApplication.onCreate();

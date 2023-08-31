@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package com.mylike.testdarkmode;
+package com.mylike.originandroid;
 
 import android.Manifest;
-import android.annotation.NonNull;
-import android.annotation.Nullable;
-import android.annotation.RequiresPermission;
-import android.annotation.SystemApi;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.graphics.Canvas;
@@ -31,9 +27,7 @@ import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 
 import android.util.Log;
-import com.android.internal.app.ProcessStats;
-import com.android.internal.os.TransferPipe;
-import com.android.internal.util.FastPrintWriter;
+
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -61,6 +55,11 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Size;
 import android.util.Slog;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.FileDescriptor;
@@ -1232,7 +1231,7 @@ public class ActivityManager {
      * most likely cause of failure is that there is no more room for more tasks for your app.
      */
     public int addAppTask(@NonNull Activity activity, @NonNull Intent intent,
-            @Nullable TaskDescription description, @NonNull Bitmap thumbnail) {
+                          @Nullable TaskDescription description, @NonNull Bitmap thumbnail) {
         Point size;
         synchronized (this) {
             ensureAppTaskThumbnailSizeLocked();
